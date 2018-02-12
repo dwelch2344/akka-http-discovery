@@ -6,9 +6,9 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 
 import scala.concurrent.duration._
-import com.lightbend.akka.sample.model._
-import com.lightbend.akka.sample.model.Greeter._
-import com.lightbend.akka.sample.model.Printer._
+import com.lightbend.akka.sample.actors._
+import com.lightbend.akka.sample.actors.Greeter._
+import com.lightbend.akka.sample.actors.Printer._
 
 //#test-classes
 class AkkaQuickstartSpec(_system: ActorSystem)

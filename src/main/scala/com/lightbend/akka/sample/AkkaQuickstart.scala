@@ -1,9 +1,24 @@
 //#full-example
 package com.lightbend.akka.sample
 
-import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
-import com.lightbend.akka.sample.model._
+import akka.actor.{ActorRef, ActorSystem}
+import com.lightbend.akka.sample.actors._
 
+object AkkaQuickstart extends App {
+
+  val system: ActorSystem = ActorSystem("core")
+  val printer: ActorRef = system.actorOf(Printer.props, "printerActor")
+  val greeter: ActorRef = system.actorOf(Greeter.props("Howdy", printer), "howdyGreeter")
+
+  // for demo
+  import com.lightbend.akka.sample.actors.Greeter._
+  greeter ! WhoToGreet("World!")
+  greeter ! Greet
+}
+
+
+
+/*
 //#main-class
 object AkkaQuickstart extends App {
   import Greeter._
@@ -37,3 +52,4 @@ object AkkaQuickstart extends App {
   goodDayGreeter ! WhoToGreet("Play")
   goodDayGreeter ! Greet
 }
+*/

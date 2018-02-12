@@ -1,4 +1,4 @@
-package com.lightbend.akka.sample.model
+package com.lightbend.akka.sample.actors
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.lightbend.akka.sample._
