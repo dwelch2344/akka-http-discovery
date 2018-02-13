@@ -2,10 +2,6 @@ package com.lightbend.akka.sample.actors
 
 import akka.actor.{Actor, ActorLogging, Props}
 
-import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.duration._
-import scala.util.Try
-
 object Printer {
   def props: Props = Props[Printer]
   final case class Greeting(greeting: String)

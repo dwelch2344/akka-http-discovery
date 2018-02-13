@@ -9,8 +9,7 @@ import com.lightbend.akka.sample.RouteProvider
 import scala.concurrent.duration._
 
 
-class ConfigRoute(
- )  extends RouteProvider{
+class ConfigRoute()  extends RouteProvider{
   val route: Route =
     path("auction") {
       put {

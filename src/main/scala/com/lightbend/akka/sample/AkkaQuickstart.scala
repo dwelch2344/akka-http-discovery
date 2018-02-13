@@ -2,8 +2,11 @@
 package com.lightbend.akka.sample
 
 import akka.actor.{ActorRef, ActorSystem}
+import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.lightbend.akka.sample.actors._
+
+import scala.io.StdIn
 
 
 class Webserver {
@@ -22,52 +25,19 @@ class Webserver {
     greeterActor ! WhoToGreet("World!")
     greeterActor ! Greet
 
-    val routes = new Routes()
-    routes.bind()
+    val routes = new Routes().produce()
+
+    val bindingFuture = Http().bindAndHandle(routes, "localhost", 8080)
+    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    StdIn.readLine() // let it run until user presses return
+    bindingFuture
+      .flatMap(_.unbind()) // trigger unbinding from the port
+      .onComplete(_ => system.terminate()) // and shutdown when done
 
     Console.println("End")
   }
 }
 
 object AkkaQuickstart extends App {
-
   new Webserver().start(args)
 }
-
-
-
-/*
-//#main-class
-object AkkaQuickstart extends App {
-  import Greeter._
-
-  // Create the 'helloAkka' actor system
-  val system: ActorSystem = ActorSystem("helloAkka")
-
-  //#create-actors
-  // Create the printer actor
-  val printer: ActorRef = system.actorOf(Printer.props, "printerActor")
-
-  // Create the 'greeter' actors
-  val howdyGreeter: ActorRef =
-    system.actorOf(Greeter.props("Howdy", printer), "howdyGreeter")
-  val helloGreeter: ActorRef =
-    system.actorOf(Greeter.props("Hello", printer), "helloGreeter")
-  val goodDayGreeter: ActorRef =
-    system.actorOf(Greeter.props("Good day", printer), "goodDayGreeter")
-  //#create-actors
-
-  //#main-send-messages
-  howdyGreeter ! WhoToGreet("Akka")
-  howdyGreeter ! Greet
-
-  howdyGreeter ! WhoToGreet("Lightbend")
-  howdyGreeter ! Greet
-
-  helloGreeter ! WhoToGreet("Scala")
-  helloGreeter ! Greet
-
-  goodDayGreeter ! WhoToGreet("Play")
-  goodDayGreeter ! Greet
-}
-*/

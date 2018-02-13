@@ -1,7 +1,6 @@
 package com.lightbend.akka.sample.actors
 
 import akka.actor.{Actor, ActorRef, Props}
-import com.lightbend.akka.sample._
 
 object Greeter {
   def props(message: String, printerActor: ActorRef): Props = Props(new Greeter(message, printerActor))

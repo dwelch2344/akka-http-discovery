@@ -1,23 +1,24 @@
 package com.lightbend.akka.sample.routes
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import akka.pattern.{ask, pipe}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.lightbend.akka.sample.RouteProvider
-import com.lightbend.akka.sample.actors.{CreateUser, CreatedUser, UserActor}
+import com.lightbend.akka.sample.actors.CreateUser
 import com.lightbend.akka.sample.actors.Printer._
-import scala.concurrent.duration._
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 
 class UserRoute(
   printer: ActorRef,
+  users: ActorRef,
 )(implicit system: ActorSystem) extends RouteProvider {
 
   // TODO clean this up
@@ -37,17 +38,27 @@ class UserRoute(
           implicit val materializer = ActorMaterializer()
           implicit val executionContext = system.dispatcher
 
-          val users = system.actorOf(Props[UserActor], "usersActor")
 
-          implicit val timeout: Timeout = 2.seconds
-          val foo = (users ? CreateUser(1, "Blah"))
+
+
+          implicit val timeout: Timeout = 6.seconds
+          val foo: Future[CreateUser] = (users ? CreateUser(1, "Blah")).mapTo[CreateUser]
 
           foo onComplete {
-            case Success(foo) => Console.println("Got success" + foo)
+            case Success(bar) => {
+              Console.println("Got success" + bar)
+
+            }
             case Failure(t) => Console.println("Got failure" + t)
           }
 
-          complete((StatusCodes.Accepted, "Get All Users"))
+          onComplete(foo) {
+            case success : Success[CreateUser] => {
+              val item = success.get
+              complete( (StatusCodes.Accepted, item.toString ) )
+            }
+            case t : Try[CreateUser] => complete( (StatusCodes.Accepted, "Error: " + t.toString()) )
+          }
 
 //          val blah : Future[Any] = users ? CreateUser(1, "Dave Welch")
 //          blah onComplete {
