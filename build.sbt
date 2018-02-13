@@ -15,6 +15,7 @@ libraryDependencies ++= {
 
     "org.scalatest"      %% "scalatest"                   % "3.0.1" % "test",
     "com.typesafe.akka"  %% "akka-http"                   % akkaHttpV,
-    "com.typesafe.akka"  %% "akka-http-testkit"           % akkaHttpV % "test"
+    "com.typesafe.akka"  %% "akka-http-testkit"           % akkaHttpV % "test",
+    "com.typesafe.akka"  %% "akka-stream"                 % "2.5.8"
   )
 }

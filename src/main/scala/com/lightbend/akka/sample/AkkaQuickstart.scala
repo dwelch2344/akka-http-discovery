@@ -2,18 +2,36 @@
 package com.lightbend.akka.sample
 
 import akka.actor.{ActorRef, ActorSystem}
+import akka.stream.ActorMaterializer
 import com.lightbend.akka.sample.actors._
+
+
+class Webserver {
+  def start(args: Array[String]) {
+    implicit val system: ActorSystem = ActorSystem("core")
+    // TODO research what this does? Something to do with streams
+    implicit val materializer = ActorMaterializer()
+    // needed for the future flatMap/onComplete in the end
+    implicit val executionContext = system.dispatcher
+
+    val printerActor: ActorRef = system.actorOf(Printer.props, "printerActor")
+    val greeterActor: ActorRef = system.actorOf(Greeter.props("Howdy", printerActor), "howdyGreeter")
+
+    // for demo
+    import com.lightbend.akka.sample.actors.Greeter._
+    greeterActor ! WhoToGreet("World!")
+    greeterActor ! Greet
+
+    val routes = new Routes()
+    routes.bind()
+
+    Console.println("End")
+  }
+}
 
 object AkkaQuickstart extends App {
 
-  val system: ActorSystem = ActorSystem("core")
-  val printer: ActorRef = system.actorOf(Printer.props, "printerActor")
-  val greeter: ActorRef = system.actorOf(Greeter.props("Howdy", printer), "howdyGreeter")
-
-  // for demo
-  import com.lightbend.akka.sample.actors.Greeter._
-  greeter ! WhoToGreet("World!")
-  greeter ! Greet
+  new Webserver().start(args)
 }
 
 
