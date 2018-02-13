@@ -4,7 +4,9 @@ package com.lightbend.akka.sample
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import com.google.inject.Guice
 import com.lightbend.akka.sample.actors._
+import com.lightbend.akka.sample.config.{FooModule, FooService}
 
 import scala.io.StdIn
 
@@ -36,8 +38,16 @@ class Webserver {
 
     Console.println("End")
   }
+
+  def guice(): Unit ={
+    val injector = Guice.createInjector(new FooModule)
+    val foo = injector.getInstance(classOf[FooService])
+    println(foo.doSomething())
+  }
 }
 
 object AkkaQuickstart extends App {
-  new Webserver().start(args)
+  new Webserver()
+//    .start(args)
+      .guice()
 }
