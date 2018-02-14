@@ -1,11 +1,10 @@
-package com.lightbend.akka.sample
+package com.lightbend.akka.sample.routes
 
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.lightbend.akka.sample.actors.{Printer, UserActor}
-import com.lightbend.akka.sample.routes.{ConfigRoute, UserRoute}
 
 trait RouteProvider {
   def route : Route

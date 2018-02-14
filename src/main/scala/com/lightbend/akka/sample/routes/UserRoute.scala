@@ -6,7 +6,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
-import com.lightbend.akka.sample.RouteProvider
 import com.lightbend.akka.sample.actors.CreateUser
 import com.lightbend.akka.sample.actors.Printer._
 

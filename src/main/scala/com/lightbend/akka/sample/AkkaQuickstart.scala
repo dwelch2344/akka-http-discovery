@@ -1,12 +1,18 @@
 //#full-example
 package com.lightbend.akka.sample
 
+import java.net.InetAddress
+
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.google.inject.Guice
 import com.lightbend.akka.sample.actors._
 import com.lightbend.akka.sample.config.{FooModule, FooService}
+import com.lightbend.akka.sample.discovery.DiscoveryThing
+import com.lightbend.akka.sample.routes.Routes
+import org.springframework.cloud.commons.util.{InetUtils, InetUtilsProperties}
+import org.springframework.cloud.consul.discovery.ConsulDiscoveryProperties
 
 import scala.io.StdIn
 
@@ -44,10 +50,35 @@ class Webserver {
     val foo = injector.getInstance(classOf[FooService])
     println(foo.doSomething())
   }
+
+  def discovery(): Unit ={
+
+    val utils = new InetUtils(new InetUtilsProperties){
+      override def findFirstNonLoopbackAddress(): InetAddress = {
+        return InetAddress.getByName("127.0.0.1")
+      }
+    }
+    val dp = new ConsulDiscoveryProperties(utils)
+    dp.setPort(8080)
+    dp.setHealthCheckPath("/")
+    dp.setRegisterHealthCheck(true)
+
+
+
+    val thing = new DiscoveryThing("127.0.0.1", dp)
+    try {
+      thing.register()
+      println(s"Service registered in Consul\nPress RETURN to stop...")
+      StdIn.readLine() // let it run until user presses return
+    }finally {
+      thing.deregister()
+    }
+  }
 }
 
 object AkkaQuickstart extends App {
   new Webserver()
-    .start(args)
+//    .start(args)
 //      .guice()
+      .discovery()
 }

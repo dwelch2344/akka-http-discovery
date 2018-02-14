@@ -18,6 +18,8 @@ libraryDependencies ++= {
     "com.typesafe.akka"  %% "akka-http-testkit"           % akkaHttpV % "test",
     "com.typesafe.akka"  %% "akka-stream"                 % "2.5.8",
     "com.typesafe.akka"  %% "akka-http-spray-json"        % "10.1.0-RC2",
-    "com.google.inject"  % "guice"                       % "4.1.0"
+    "com.google.inject"  %  "guice"                       % "4.1.0",
+
+    "org.springframework.cloud" % "spring-cloud-starter-consul-all" % "1.3.2.RELEASE"
   )
 }
