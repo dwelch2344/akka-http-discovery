@@ -48,6 +48,6 @@ class Webserver {
 
 object AkkaQuickstart extends App {
   new Webserver()
-//    .start(args)
-      .guice()
+    .start(args)
+//      .guice()
 }
