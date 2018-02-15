@@ -1,8 +1,14 @@
 name := "akka-quickstart-scala"
 
+name := "akka-discovery"
+organization := "example"
 version := "1.1"
 
 scalaVersion := "2.12.2"
+
+
+unmanagedResourceDirectories in Compile += baseDirectory.value / "extra-resources"
+
 
 lazy val akkaVersion = "2.5.3"
 

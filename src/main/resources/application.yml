@@ -1,0 +1,15 @@
+#spring.cloud.consul.discovery.heartbeat.enabled: blah2
+ribbon.client.name: application2
+spring:
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: false
+    consul:
+      host: localhost
+      port: 8500
+      config.enabled: false
+      enabled: true
+      discovery.heartbeat.enabled: true
+      config:
+        enabled: false
