@@ -20,6 +20,18 @@ libraryDependencies ++= {
     "com.typesafe.akka"  %% "akka-http-spray-json"        % "10.1.0-RC2",
     "com.google.inject"  %  "guice"                       % "4.1.0",
 
+    "org.springframework.cloud" % "spring-cloud-starter-consul-all" % "1.3.2.RELEASE",,
+    "org.springframework.cloud" % "spring-cloud-consul-core" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-consul-binder" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-consul-config" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-consul-discovery" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-starter-consul" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-starter-consul-bus" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-starter-consul-config" % "1.3.2.RELEASE",
+    "org.springframework.cloud" % "spring-cloud-starter-consul-discovery" % "1.3.2.RELEASE",
     "org.springframework.cloud" % "spring-cloud-starter-consul-all" % "1.3.2.RELEASE"
+
   )
 }
+
+resolvers += Resolver.mavenLocal

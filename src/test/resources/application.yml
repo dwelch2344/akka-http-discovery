@@ -1,0 +1,12 @@
+ribbon.client.name: client
+spring.cloud.consul.config.enabled: false
+#
+#spring:
+#  cloud:
+#    consul:
+#      discovery:
+#        enabled: true
+#      host: localhost
+#      port: 8500
+#
+#spring.cloud.consul.ribbon.enabled: true

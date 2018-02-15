@@ -44,7 +44,7 @@ class DiscoveryThing(
       heartbeat
     )
 
-    val disc = new ConsulDiscoveryClient(client, dp, MyResolver(reg.getHost, reg.getPort))
+    val discovery = new ConsulDiscoveryClient(client, dp, MyResolver(reg.getHost, reg.getPort))
 
 
   def register(): Unit ={
@@ -56,7 +56,11 @@ class DiscoveryThing(
   }
 
   def getAllInstances : mutable.Buffer[ServiceInstance] = {
-    JavaConverters.asScalaBuffer(disc.getAllInstances)
+    JavaConverters.asScalaBuffer(discovery.getAllInstances)
+  }
+
+  def foo(): Unit ={
+
   }
 
 }
