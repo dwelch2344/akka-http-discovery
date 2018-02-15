@@ -1,4 +1,4 @@
-ribbon.client.name: client
+ribbon.client.name: application
 spring.cloud.consul.config.enabled: false
 #
 #spring:
@@ -9,4 +9,4 @@ spring.cloud.consul.config.enabled: false
 #      host: localhost
 #      port: 8500
 #
-#spring.cloud.consul.ribbon.enabled: true
+spring.cloud.consul.ribbon.enabled: true
