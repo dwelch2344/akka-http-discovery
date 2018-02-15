@@ -14,7 +14,7 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties
 import org.springframework.cloud.consul.discovery.{ConsulDiscoveryProperties, HeartbeatProperties}
 import org.springframework.cloud.consul.serviceregistry.{ConsulAutoRegistration, ConsulAutoServiceRegistration, ConsulRegistrationCustomizer, ConsulServiceRegistry}
-import org.springframework.context.{ApplicationContext, ApplicationContextInitializer}
+import org.springframework.context.{ApplicationContext, ApplicationContextInitializer, ConfigurableApplicationContext}
 import org.springframework.context.annotation._
 import org.springframework.web.client.RestTemplate
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
@@ -40,13 +40,8 @@ class DiscoveryConfig {
   @Bean
   def consulRegistration(autoServiceRegistrationProperties: AutoServiceRegistrationProperties, properties: ConsulDiscoveryProperties, applicationContext: ApplicationContext, registrationCustomizers: ObjectProvider[util.List[ConsulRegistrationCustomizer]], heartbeatProperties: HeartbeatProperties): ConsulAutoRegistration = ConsulAutoRegistration.registration(autoServiceRegistrationProperties, properties, applicationContext, registrationCustomizers.getIfAvailable, heartbeatProperties)
 
-//  @Bean def placeHolderConfigurer() = new PropertySourcesPlaceholderConfigurer
-
   @Bean
-  def YamlPropertiesFactoryBean() : YamlPropertiesFactoryBean = {
-    val yaml = new YamlPropertiesFactoryBean
-    yaml
-  }
+  def YamlPropertiesFactoryBean() : YamlPropertiesFactoryBean = new YamlPropertiesFactoryBean
 
 }
 
@@ -55,9 +50,6 @@ class Discovery(configs: Class[_]*) {
   private val ctx = new AnnotationConfigApplicationContext
 
   new ConfigFileApplicationContextInitializer().initialize(ctx)
-
-  // TODO research why we have to do this manually
-//  new YamlFileApplicationContextInitializer().initialize(ctx)
 
   ctx.register(classOf[DiscoveryConfig])
   configs.foreach{ cfg => ctx.register(cfg) }
@@ -86,26 +78,6 @@ class Discovery(configs: Class[_]*) {
   }
 }
 
-
-import org.springframework.boot.env.YamlPropertySourceLoader
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.core.env.PropertySource
-import java.io.IOException
-
-class YamlFileApplicationContextInitializer extends ApplicationContextInitializer[ConfigurableApplicationContext] {
-  override def initialize(applicationContext: ConfigurableApplicationContext): Unit = {
-    try {
-      val resource = applicationContext.getResource("classpath:application.yml")
-      val sourceLoader = new YamlPropertySourceLoader
-      val yamlTestProperties = sourceLoader.load("manual-application.properties", resource, null)
-      applicationContext.getEnvironment.getPropertySources.addFirst(yamlTestProperties)
-    } catch {
-      case e: IOException =>
-        throw new RuntimeException(e)
-    }
-  }
-}
 
 class ConfigFileApplicationContextInitializer() extends ApplicationContextInitializer[ConfigurableApplicationContext] {
   override def initialize(applicationContext: ConfigurableApplicationContext): Unit = {

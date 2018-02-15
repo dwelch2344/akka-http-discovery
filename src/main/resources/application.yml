@@ -10,6 +10,9 @@ spring:
       port: 8500
       config.enabled: false
       enabled: true
-      discovery.heartbeat.enabled: true
+      discovery:
+        register: false
+        heartbeat.enabled: true
+        deregister: false
       config:
         enabled: false
