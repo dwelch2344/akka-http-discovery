@@ -4,6 +4,7 @@ import java.util
 import java.util.List
 
 import com.ecwid.consul.v1.ConsulClient
+import com.lightbend.akka.sample.discovery.loadbalance.BackoffPolicyFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -17,7 +18,11 @@ import org.springframework.cloud.consul.serviceregistry.{ConsulAutoRegistration,
 import org.springframework.context.{ApplicationContext, ApplicationContextInitializer, ConfigurableApplicationContext}
 import org.springframework.context.annotation._
 import org.springframework.web.client.RestTemplate
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
+import org.springframework.cloud.client.loadbalancer.LoadBalancedBackOffPolicyFactory
+import org.springframework.context.annotation.Bean
+import org.springframework.retry.backoff.BackOffPolicy
+import org.springframework.retry.backoff.ExponentialBackOffPolicy
+
 
 @Configuration
 @ComponentScan
@@ -43,6 +48,7 @@ class DiscoveryConfig {
   @Bean
   def YamlPropertiesFactoryBean() : YamlPropertiesFactoryBean = new YamlPropertiesFactoryBean
 
+  @Bean def backOffPolciyFactory: LoadBalancedBackOffPolicyFactory = new BackoffPolicyFactory
 }
 
 class Discovery(configs: Class[_]*) {

@@ -1,5 +1,10 @@
-#spring.cloud.consul.discovery.heartbeat.enabled: blah2
-ribbon.client.name: application2
+ribbon.client.name: application
+
+# See CommonClientConfigKey in Netflix
+example:
+  retryable: true
+  retryableStatusCodes: 502
+  MaxAutoRetries: 3
 spring:
   cloud:
     service-registry:
@@ -12,7 +17,15 @@ spring:
       enabled: true
       discovery:
         register: false
-        heartbeat.enabled: true
+        heartbeat:
+          enabled: true
         deregister: false
+        register-health-check: false
       config:
         enabled: false
+
+
+
+logging.level:
+#  org.springframework.retry.backoff.ExponentialBackOffPolicy: DEBUG
+#  org.springframework.retry.support.RetryTemplate: DEBUG
