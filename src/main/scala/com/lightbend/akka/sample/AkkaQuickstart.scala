@@ -9,7 +9,7 @@ import akka.stream.ActorMaterializer
 import com.google.inject.Guice
 import com.lightbend.akka.sample.actors._
 import com.lightbend.akka.sample.config.{FooModule, FooService}
-import com.lightbend.akka.sample.discovery.DiscoveryThing
+import com.lightbend.akka.sample.discovery.{Discovery, DiscoveryThing}
 import com.lightbend.akka.sample.routes.Routes
 import org.springframework.cloud.commons.util.{InetUtils, InetUtilsProperties}
 import org.springframework.cloud.consul.discovery.ConsulDiscoveryProperties
@@ -18,6 +18,7 @@ import scala.io.StdIn
 
 
 class Webserver {
+
   def start(args: Array[String]) {
     implicit val system: ActorSystem = ActorSystem("core")
     // TODO research what this does? Something to do with streams
@@ -53,26 +54,13 @@ class Webserver {
 
   def discovery(): Unit ={
 
-    val utils = new InetUtils(new InetUtilsProperties){
-      override def findFirstNonLoopbackAddress(): InetAddress = {
-        return InetAddress.getByName("127.0.0.1")
-      }
-    }
-    val dp = new ConsulDiscoveryProperties(utils)
-    dp.setPort(8080)
-    dp.setHealthCheckPath("/")
-    dp.setRegisterHealthCheck(true)
+    val d = new Discovery()
 
-
-
-    val thing = new DiscoveryThing("127.0.0.1", dp)
-    try {
-      thing.register()
-      println(s"Service registered in Consul\nPress RETURN to stop...")
-      StdIn.readLine() // let it run until user presses return
-    }finally {
-      thing.deregister()
-    }
+    d.register();
+    println(s"Registered... Press Enter to continue")
+    StdIn.readLine() // let it run until user presses return
+    d.shutdown()
+    println(s"Shutting down")
   }
 }
 
@@ -81,4 +69,6 @@ object AkkaQuickstart extends App {
 //    .start(args)
 //      .guice()
       .discovery()
+
+  println(s"Exiting")
 }

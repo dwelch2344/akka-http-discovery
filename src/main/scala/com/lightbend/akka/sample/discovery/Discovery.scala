@@ -2,6 +2,8 @@ package com.lightbend.akka.sample.discovery
 
 import java.util
 import java.util.List
+import java.util.concurrent.ScheduledExecutorService
+import javax.annotation.PreDestroy
 
 import com.ecwid.consul.v1.ConsulClient
 import com.lightbend.akka.sample.discovery.loadbalance.BackoffPolicyFactory
@@ -13,15 +15,20 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.{DiscoveryClient, EnableDiscoveryClient}
 import org.springframework.cloud.client.loadbalancer.LoadBalanced
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties
-import org.springframework.cloud.consul.discovery.{ConsulDiscoveryProperties, HeartbeatProperties}
+import org.springframework.cloud.consul.discovery.{ConsulDiscoveryProperties, HeartbeatProperties, TtlScheduler}
 import org.springframework.cloud.consul.serviceregistry.{ConsulAutoRegistration, ConsulAutoServiceRegistration, ConsulRegistrationCustomizer, ConsulServiceRegistry}
 import org.springframework.context.{ApplicationContext, ApplicationContextInitializer, ConfigurableApplicationContext}
 import org.springframework.context.annotation._
 import org.springframework.web.client.RestTemplate
 import org.springframework.cloud.client.loadbalancer.LoadBalancedBackOffPolicyFactory
+import org.springframework.cloud.consul.binder.ConsulBinder
+import org.springframework.cloud.stream.binding.BindingService
 import org.springframework.context.annotation.Bean
 import org.springframework.retry.backoff.BackOffPolicy
 import org.springframework.retry.backoff.ExponentialBackOffPolicy
+import org.springframework.scheduling.TaskScheduler
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler
+import org.springframework.util.ReflectionUtils
 
 
 @Configuration
@@ -49,6 +56,9 @@ class DiscoveryConfig {
   def YamlPropertiesFactoryBean() : YamlPropertiesFactoryBean = new YamlPropertiesFactoryBean
 
   @Bean def backOffPolciyFactory: LoadBalancedBackOffPolicyFactory = new BackoffPolicyFactory
+
+  @Bean @Primary
+  def CustomTtl(configuration: HeartbeatProperties, client: ConsulClient): TtlScheduler = new CustomTtl(configuration: HeartbeatProperties, client: ConsulClient)
 }
 
 class Discovery(configs: Class[_]*) {
@@ -57,6 +67,7 @@ class Discovery(configs: Class[_]*) {
 
   new ConfigFileApplicationContextInitializer().initialize(ctx)
 
+  ctx.registerShutdownHook()
   ctx.register(classOf[DiscoveryConfig])
   configs.foreach{ cfg => ctx.register(cfg) }
   ctx.refresh()
@@ -80,7 +91,7 @@ class Discovery(configs: Class[_]*) {
 
   def shutdown(): Unit ={
     deregister()
-    ctx.destroy()
+    ctx.close()
   }
 }
 
@@ -94,4 +105,18 @@ class ConfigFileApplicationContextInitializer() extends ApplicationContextInitia
       }
     }.apply()
   }
+}
+
+// this little guy has no way to shut himself down :(  so, we'll force it here
+class CustomTtl(configuration: HeartbeatProperties, client: ConsulClient) extends TtlScheduler(configuration, client) {
+
+  @PreDestroy
+  def shutdown(): Unit ={
+    val f = ReflectionUtils.findField(classOf[TtlScheduler], "scheduler", classOf[TaskScheduler])
+    f.setAccessible(true)
+    val scheduler = f.get(this).asInstanceOf[ConcurrentTaskScheduler]
+    scheduler.getConcurrentExecutor.asInstanceOf[ScheduledExecutorService].shutdown()
+    println("got it")
+  }
+
 }
