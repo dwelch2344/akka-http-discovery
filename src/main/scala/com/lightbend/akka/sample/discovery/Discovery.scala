@@ -1,13 +1,14 @@
 package com.lightbend.akka.sample.discovery
 
 import java.util
-import java.util.List
+import java.util.{List, UUID}
 import java.util.concurrent.ScheduledExecutorService
 import javax.annotation.PreDestroy
 
 import com.ecwid.consul.v1.ConsulClient
 import com.lightbend.akka.sample.discovery.loadbalance.BackoffPolicyFactory
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.context.config.ConfigFileApplicationListener
@@ -16,7 +17,7 @@ import org.springframework.cloud.client.discovery.{DiscoveryClient, EnableDiscov
 import org.springframework.cloud.client.loadbalancer.LoadBalanced
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties
 import org.springframework.cloud.consul.discovery.{ConsulDiscoveryProperties, HeartbeatProperties, TtlScheduler}
-import org.springframework.cloud.consul.serviceregistry.{ConsulAutoRegistration, ConsulAutoServiceRegistration, ConsulRegistrationCustomizer, ConsulServiceRegistry}
+import org.springframework.cloud.consul.serviceregistry._
 import org.springframework.context.{ApplicationContext, ApplicationContextInitializer, ConfigurableApplicationContext}
 import org.springframework.context.annotation._
 import org.springframework.web.client.RestTemplate
@@ -39,6 +40,9 @@ import org.springframework.util.ReflectionUtils
 @PropertySource(Array[String]("classpath:application.yml"))
 class DiscoveryConfig {
 
+  @Value("${PORT:8080}")
+  var port :Integer = null
+
   @Bean
   @LoadBalanced
   def restTemplate() :RestTemplate = new RestTemplate()
@@ -59,6 +63,27 @@ class DiscoveryConfig {
 
   @Bean @Primary
   def CustomTtl(configuration: HeartbeatProperties, client: ConsulClient): TtlScheduler = new CustomTtl(configuration: HeartbeatProperties, client: ConsulClient)
+
+  @Bean
+  def kubernetesCustomizer(): ConsulRegistrationCustomizer ={
+    (registration: ConsulRegistration) => {
+      val s = registration.getService
+
+      val isKubernetes = false // TODO are we in k8s / alamo?
+      if( isKubernetes ){
+
+        val address = "localhost" // TODO get kubernetes internal IP
+        val id = s.getName + UUID.randomUUID() // TODO get k8s / alamo pod name
+
+        s.setAddress(address)
+        s.setId(id)
+        // Add tags? maybe what region for GDPR?
+      }
+
+
+      s.setPort(port)
+    }
+  }
 }
 
 class Discovery(configs: Class[_]*) {
@@ -80,6 +105,8 @@ class Discovery(configs: Class[_]*) {
 
   println(reg)
 
+  def getHost() = reg.getHost
+  def getPort() = reg.getPort
 
   def register(): Unit ={
     registry.register(reg)
