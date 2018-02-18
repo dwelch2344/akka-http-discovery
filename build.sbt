@@ -1,19 +1,12 @@
 name := "akka-quickstart-scala"
-
-name := "akka-discovery"
 organization := "example"
 version := "1.1"
 
 scalaVersion := "2.12.2"
 
-
-unmanagedResourceDirectories in Compile += baseDirectory.value / "extra-resources"
-
-
-lazy val akkaVersion = "2.5.3"
-
 libraryDependencies ++= {
   val akkaHttpV      = "10.0.+"
+  val akkaVersion = "2.5.3"
 
   Seq(
     "com.typesafe.akka"  %% "akka-actor"                  % akkaVersion,
@@ -43,3 +36,18 @@ libraryDependencies ++= {
 }
 
 resolvers += Resolver.mavenLocal
+Defaults.itSettings
+Revolver.settings
+
+enablePlugins(JavaAppPackaging, JavaAgent)
+
+// when you call "sbt run" aspectj weaving kicks in
+//javaAgents += "org.aspectj" % "aspectjweaver" % "1.8.10"
+//javaOptions in Universal += "-Dorg.aspectj.tracing.factory=default"
+fork in run := true
+
+initialCommands := """|import akka.actor._
+                      |import akka.pattern._
+                      |import akka.util._
+                      |import scala.concurrent._
+                      |import scala.concurrent.duration._""".stripMargin
