@@ -12,6 +12,8 @@ trait HasId[ID]{
 
 trait Repository[E <: HasId[ID], ID]{
   def save(e: E): Future[E]
+  def load(id: ID): Future[Option[E]]
+  def stream(): Future[Seq[E]]
 }
 
 
@@ -20,7 +22,7 @@ trait Repository[E <: HasId[ID], ID]{
 
 package object types {
   type Saver[E] = E => Future[E]
-  type Loader[E, ID] = ID => Future[E]
+  type Loader[E, ID] = ID => Future[Option[E]]
   type Streamer[E, ID] = () => Future[Seq[E]]
 }
 
@@ -35,7 +37,7 @@ class RepositoryImpl[E <: HasId[ID], ID](
 //class Repository[E, ID](saver: Saver[E], loader: Loader[E, ID], streamer:  Streamer[E, ID]) {
 
   def save(e: E): Future[E] = saver.get.apply(e)
-  def load(id: ID): Future[E] = loader.apply(id)
+  def load(id: ID): Future[Option[E]] = loader.apply(id)
   def stream(): Future[Seq[E]] = streamer.apply
 
 }
@@ -49,9 +51,9 @@ class InMemoryLongIdRepository[E <: HasId[Long]] extends Repository[E, Long]{
   val cache : collection.mutable.Map[Long, E] = collection.mutable.Map[Long, E]()
   var id = 0L
 
-  override def save(e: E): Future[E] = {
+  implicit val ec = ExecutionContext.global
 
-    implicit val ec = ExecutionContext.global
+  override def save(e: E): Future[E] =
     Future[E] {
       e.id match {
         case None => {
@@ -62,5 +64,14 @@ class InMemoryLongIdRepository[E <: HasId[Long]] extends Repository[E, Long]{
       cache.put(e.id.get, e)
       e
     }
-  }
+
+  override def load(id: Long): Future[Option[E]] =
+    Future[Option[E]] {
+      cache.get(id)
+    }
+
+  override def stream(): Future[Seq[E]] =
+    Future[Seq[E]]{
+      cache.toSeq.map{ e => e._2 }
+    }
 }
