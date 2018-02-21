@@ -1,5 +1,6 @@
 package com.lightbend.akka.sample.domain
 
+import com.lightbend.akka.sample.domain.customers.{Customer, Customers}
 import com.lightbend.akka.sample.domain.types.{Loader, Saver, Streamer}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,7 +14,7 @@ trait HasId[ID]{
 trait Repository[E <: HasId[ID], ID]{
   def save(e: E): Future[E]
   def load(id: ID): Future[Option[E]]
-  def stream(): Future[Seq[E]]
+  def stream(): Future[Customers]
 }
 
 
@@ -23,7 +24,7 @@ trait Repository[E <: HasId[ID], ID]{
 package object types {
   type Saver[E] = E => Future[E]
   type Loader[E, ID] = ID => Future[Option[E]]
-  type Streamer[E, ID] = () => Future[Seq[E]]
+  type Streamer[E, ID] = () => Future[Customers]
 }
 
 
@@ -38,7 +39,7 @@ class RepositoryImpl[E <: HasId[ID], ID](
 
   def save(e: E): Future[E] = saver.get.apply(e)
   def load(id: ID): Future[Option[E]] = loader.apply(id)
-  def stream(): Future[Seq[E]] = streamer.apply
+  def stream(): Future[Customers] = streamer.apply
 
 }
 
@@ -70,8 +71,9 @@ class InMemoryLongIdRepository[E <: HasId[Long]] extends Repository[E, Long]{
       cache.get(id)
     }
 
-  override def stream(): Future[Seq[E]] =
-    Future[Seq[E]]{
-      cache.toSeq.map{ e => e._2 }
+  override def stream(): Future[Customers] =
+    Future[Customers]{
+      val list = cache.toSeq.map{ e => e._2 }.toList.asInstanceOf[List[Customer]]
+      new Customers(list)
     }
 }
