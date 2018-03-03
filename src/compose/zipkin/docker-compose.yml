@@ -1,0 +1,22 @@
+#zipkin:
+#  image: openzipkin/zipkin:1.11.1
+#  ports:
+#    - 9410:9410
+#    - 9411:9411
+
+
+
+zipkin-mysql:
+  image: fabric8/zipkin-mysql:0.0.8
+  ports:
+    - 3306:3306
+
+zipkin:
+  image: openzipkin/zipkin:1.11.1
+  environment:
+    - STORAGE_TYPE=mysql
+  ports:
+    - 9410:9410
+    - 9411:9411
+  links:
+    - zipkin-mysql:storage

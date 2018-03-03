@@ -30,7 +30,10 @@ libraryDependencies ++= {
     "org.springframework.cloud" % "spring-cloud-starter-consul-bus" % "1.3.2.RELEASE",
     "org.springframework.cloud" % "spring-cloud-starter-consul-config" % "1.3.2.RELEASE",
     "org.springframework.cloud" % "spring-cloud-starter-consul-discovery" % "1.3.2.RELEASE",
-    "org.springframework.cloud" % "spring-cloud-starter-consul-all" % "1.3.2.RELEASE"
+    "org.springframework.cloud" % "spring-cloud-starter-consul-all" % "1.3.2.RELEASE",
+
+    "io.zipkin.brave" % "brave" % "4.16.2",
+    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.3.3"
 
   )
 }
