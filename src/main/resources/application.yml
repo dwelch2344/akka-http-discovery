@@ -1,5 +1,9 @@
 ribbon.client.name: application
 
+
+app:
+  port: ${PORT:8080}
+
 # See CommonClientConfigKey in Netflix
 example:
   retryable: true
@@ -16,14 +20,14 @@ spring:
       config.enabled: false
       enabled: true
       discovery:
+        port: ${app.port}
         register: false
         heartbeat:
           enabled: true
         deregister: false
-        register-health-check: false
+        register-health-check: true
       config:
         enabled: false
-
 
 
 logging.level:

@@ -40,7 +40,13 @@ import org.springframework.util.ReflectionUtils
 @PropertySource(Array[String]("classpath:application.yml"))
 class DiscoveryConfig {
 
-  @Value("${PORT:8080}")
+  @Value("${SD_SERVICE:#{null}}")
+  var serviceDiscoveryService: String = null
+
+  @Value("${SD_HOST:#{null}}")
+  var serviceDiscoveryHost: String = null
+
+  @Value("${app.port}")
   var port :Integer = null
 
   @Bean
@@ -69,17 +75,19 @@ class DiscoveryConfig {
     (registration: ConsulRegistration) => {
       val s = registration.getService
 
-      val isKubernetes = false // TODO are we in k8s / alamo?
-      if( isKubernetes ){
 
-        val address = "localhost" // TODO get kubernetes internal IP
-        val id = s.getName + UUID.randomUUID() // TODO get k8s / alamo pod name
 
-        s.setAddress(address)
-        s.setId(id)
-        // Add tags? maybe what region for GDPR?
+      val id = s.getName + UUID.randomUUID() // TODO get k8s / alamo pod name
+      if( serviceDiscoveryHost != null ){
+        s.setAddress(serviceDiscoveryHost)
       }
 
+      if( serviceDiscoveryService != null ){
+        s.setName(serviceDiscoveryService)
+      }
+
+      s.setId(id)
+      // Add tags? maybe what region for GDPR?
 
       s.setPort(port)
     }
@@ -107,6 +115,7 @@ class Discovery(configs: Class[_]*) {
 
   def getHost() = reg.getHost
   def getPort() = reg.getPort
+  def getService() = reg.getService
 
   def register(): Unit ={
     registry.register(reg)
