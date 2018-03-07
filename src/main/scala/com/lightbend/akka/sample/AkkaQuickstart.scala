@@ -30,9 +30,9 @@ class Webserver {
     implicit val executionContext = system.dispatcher
 
 
-    val routes = new Routes().produce()
-
     val d = new Discovery()
+
+    val routes = new Routes().produce(d)
     val host = d.getHost()
     val port = d.getPort()
     val service = d.getService()
@@ -79,9 +79,11 @@ class Webserver {
     greeterActor ! WhoToGreet("World!")
     greeterActor ! Greet
 
-    val routes = new Routes().produce()
-
     val d = new Discovery()
+
+    val routes = new Routes().produce(d)
+
+
     val host = d.getHost()
     val port = d.getPort()
     val bindingFuture = Http().bindAndHandle(routes, host, port)

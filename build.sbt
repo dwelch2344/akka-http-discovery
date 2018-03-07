@@ -4,9 +4,12 @@ version := "1.1"
 
 scalaVersion := "2.12.2"
 
+resolvers += Resolver.bintrayRepo("hseeberger", "maven")
+
 libraryDependencies ++= {
   val akkaHttpV      = "10.0.+"
-  val akkaVersion = "2.5.3"
+  val akkaVersion    = "2.5.3"
+  val circeV         = "0.8.+"
 
   Seq(
     "com.typesafe.akka"  %% "akka-actor"                  % akkaVersion,
@@ -33,8 +36,13 @@ libraryDependencies ++= {
     "org.springframework.cloud" % "spring-cloud-starter-consul-all" % "1.3.2.RELEASE",
 
     "io.zipkin.brave" % "brave" % "4.16.2",
-    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.3.3"
+    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.3.3",
 
+    "io.circe"           %% "circe-core"                  % circeV,
+    "io.circe"           %% "circe-parser"                % circeV,
+    "io.circe"           %% "circe-generic"               % circeV,
+    "io.circe"           %% "circe-java8"                 % circeV,
+    "de.heikoseeberger" %% "akka-http-circe" % "1.20.0-RC2"
   )
 }
 

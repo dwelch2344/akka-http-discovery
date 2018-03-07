@@ -1,12 +1,16 @@
 package com.lightbend.akka.sample.discovery
 
+import java.io.IOException
+import java.lang.reflect.Type
 import java.util
-import java.util.{List, UUID}
+import java.util.{ArrayList, List, UUID}
 import java.util.concurrent.ScheduledExecutorService
 import javax.annotation.PreDestroy
 
 import com.ecwid.consul.v1.ConsulClient
+import com.google.common.collect.Maps
 import com.lightbend.akka.sample.discovery.loadbalance.BackoffPolicyFactory
+import org.apache.commons.logging.LogFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean
@@ -20,16 +24,24 @@ import org.springframework.cloud.consul.discovery.{ConsulDiscoveryProperties, He
 import org.springframework.cloud.consul.serviceregistry._
 import org.springframework.context.{ApplicationContext, ApplicationContextInitializer, ConfigurableApplicationContext}
 import org.springframework.context.annotation._
-import org.springframework.web.client.RestTemplate
+import org.springframework.web.client.{HttpMessageConverterExtractor, RequestCallback, RestTemplate}
 import org.springframework.cloud.client.loadbalancer.LoadBalancedBackOffPolicyFactory
 import org.springframework.cloud.consul.binder.ConsulBinder
 import org.springframework.cloud.stream.binding.BindingService
 import org.springframework.context.annotation.Bean
+import org.springframework.http.{HttpMethod, MediaType}
 import org.springframework.retry.backoff.BackOffPolicy
 import org.springframework.retry.backoff.ExponentialBackOffPolicy
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler
 import org.springframework.util.ReflectionUtils
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+import io.circe.Decoder
+import io.circe.generic.auto._
+import io.circe.parser.decode
+import org.springframework.http.client.ClientHttpRequest
+import org.springframework.http.converter.{GenericHttpMessageConverter, HttpMessageConverter}
+import scala.collection.JavaConverters._
 
 
 @Configuration
@@ -129,6 +141,18 @@ class Discovery(configs: Class[_]*) {
     deregister()
     ctx.close()
   }
+
+  def query[T: Decoder](url: String, method: HttpMethod, clazz: Class[T]) = {
+    val requestCallback = new AcceptHeaderRequestCallback(classOf[String], asScalaBuffer(rest.getMessageConverters) )
+    val responseExtractor = new HttpMessageConverterExtractor[String](classOf[String], rest.getMessageConverters)
+    val raw = rest.execute(url, HttpMethod.GET, requestCallback, responseExtractor, Maps.newHashMap())
+
+    val decoded = decode[T](raw)
+    decoded match {
+      case Right(result) => result
+      case Left(ex:Throwable) => throw new RuntimeException(s"Failed Making API Request: ${ex.getMessage}", ex)
+    }
+  }
 }
 
 
@@ -155,4 +179,54 @@ class CustomTtl(configuration: HeartbeatProperties, client: ConsulClient) extend
     println("got it")
   }
 
+}
+
+
+private class AcceptHeaderRequestCallback (val responseType: Type, converters: Seq[HttpMessageConverter[_]]) extends RequestCallback {
+  @throws[IOException]
+  override def doWithRequest(request: ClientHttpRequest): Unit = {
+    if (this.responseType != null) {
+
+      var responseClass: Class[_] = responseType match {
+        case clazz: Class[_] => clazz
+        case _ => null
+      }
+      val allSupportedMediaTypes = new util.ArrayList[MediaType]
+
+      converters.foreach { converter =>
+        if (responseClass != null) {
+          if ( converter.canRead( responseClass, null) ){
+            allSupportedMediaTypes.addAll(getSupportedMediaTypes(converter))
+          }else converter match {
+            case genericConverter: GenericHttpMessageConverter[_] =>
+              if (genericConverter.canRead(this.responseType, null, null)) {
+                allSupportedMediaTypes.addAll(getSupportedMediaTypes(converter))
+              }
+            case _ =>
+          }
+        }
+      }
+      if (!allSupportedMediaTypes.isEmpty) {
+        MediaType.sortBySpecificity(allSupportedMediaTypes)
+//        if (logger.isDebugEnabled){
+//          logger.debug("Setting request Accept header to " + allSupportedMediaTypes)
+//        }
+        request.getHeaders.setAccept(allSupportedMediaTypes)
+      }
+    }
+  }
+
+  private def getSupportedMediaTypes(messageConverter: HttpMessageConverter[_]) = {
+    var supportedMediaTypes = messageConverter.getSupportedMediaTypes
+    val result = new util.ArrayList[MediaType](supportedMediaTypes.size)
+
+    asScalaBuffer(supportedMediaTypes).foreach{ smt =>
+      var supportedMediaType = smt
+      if (supportedMediaType.getCharset != null) {
+        supportedMediaType = new MediaType(supportedMediaType.getType, supportedMediaType.getSubtype)
+      }
+      result.add(supportedMediaType)
+    }
+    result
+  }
 }
