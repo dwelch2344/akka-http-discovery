@@ -3,14 +3,14 @@ package com.lightbend.akka.sample.discovery
 import java.io.IOException
 import java.lang.reflect.Type
 import java.util
-import java.util.{ArrayList, List, UUID}
+import java.util.UUID
 import java.util.concurrent.ScheduledExecutorService
 import javax.annotation.PreDestroy
 
 import com.ecwid.consul.v1.ConsulClient
-import com.google.common.collect.Maps
 import com.lightbend.akka.sample.discovery.loadbalance.BackoffPolicyFactory
-import org.apache.commons.logging.LogFactory
+import io.circe.Decoder
+import io.circe.parser.decode
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean
@@ -18,29 +18,20 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.context.config.ConfigFileApplicationListener
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.{DiscoveryClient, EnableDiscoveryClient}
-import org.springframework.cloud.client.loadbalancer.LoadBalanced
+import org.springframework.cloud.client.loadbalancer.{LoadBalanced, LoadBalancedBackOffPolicyFactory}
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties
 import org.springframework.cloud.consul.discovery.{ConsulDiscoveryProperties, HeartbeatProperties, TtlScheduler}
 import org.springframework.cloud.consul.serviceregistry._
+import org.springframework.context.annotation.{Bean, _}
 import org.springframework.context.{ApplicationContext, ApplicationContextInitializer, ConfigurableApplicationContext}
-import org.springframework.context.annotation._
-import org.springframework.web.client.{HttpMessageConverterExtractor, RequestCallback, RestTemplate}
-import org.springframework.cloud.client.loadbalancer.LoadBalancedBackOffPolicyFactory
-import org.springframework.cloud.consul.binder.ConsulBinder
-import org.springframework.cloud.stream.binding.BindingService
-import org.springframework.context.annotation.Bean
+import org.springframework.http.client.ClientHttpRequest
+import org.springframework.http.converter.{GenericHttpMessageConverter, HttpMessageConverter}
 import org.springframework.http.{HttpMethod, MediaType}
-import org.springframework.retry.backoff.BackOffPolicy
-import org.springframework.retry.backoff.ExponentialBackOffPolicy
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler
 import org.springframework.util.ReflectionUtils
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-import io.circe.Decoder
-import io.circe.generic.auto._
-import io.circe.parser.decode
-import org.springframework.http.client.ClientHttpRequest
-import org.springframework.http.converter.{GenericHttpMessageConverter, HttpMessageConverter}
+import org.springframework.web.client.{HttpMessageConverterExtractor, RequestCallback, RestTemplate}
+
 import scala.collection.JavaConverters._
 
 
@@ -142,10 +133,14 @@ class Discovery(configs: Class[_]*) {
     ctx.close()
   }
 
-  def query[T: Decoder](url: String, method: HttpMethod, clazz: Class[T]) = {
+  def query[T: Decoder](url: String, method: HttpMethod, clazz: Class[T]): T  = {
+    query(url, method, clazz, Map.empty)
+  }
+
+  def query[T: Decoder](url: String, method: HttpMethod, clazz: Class[T], params: Map[String, Any]): T = {
     val requestCallback = new AcceptHeaderRequestCallback(classOf[String], asScalaBuffer(rest.getMessageConverters) )
     val responseExtractor = new HttpMessageConverterExtractor[String](classOf[String], rest.getMessageConverters)
-    val raw = rest.execute(url, HttpMethod.GET, requestCallback, responseExtractor, Maps.newHashMap())
+    val raw = rest.execute(url, method, requestCallback, responseExtractor, mapAsJavaMap(params) )
 
     val decoded = decode[T](raw)
     decoded match {
