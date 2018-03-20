@@ -6,6 +6,8 @@ import com.lightbend.akka.sample.extension.Contextual
 import org.scalatest._
 import akka.pattern.ask
 import akka.util.Timeout
+import com.lightbend.akka.sample.util.mdc.MDCPropagatingExecutionContext
+import org.slf4j.MDC
 
 import scala.concurrent.duration.{Deadline, Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -32,6 +34,33 @@ class ExtensionTest extends TestKit(ActorSystem("MySpec")) with ImplicitSender w
 //        expectMsg("Done")
         println("Yay")
 
+        Thread.sleep(2 * 1000)
+
+      }
+
+      "haz context" in {
+
+        val log = system.log
+        val key = "requestID"
+        implicit val ec = MDCPropagatingExecutionContext.Implicits.global
+
+        val fn = (name: String, token: String) => Future[Any] {
+          MDC.put(key, token)
+          Future[Any] {
+            val id = MDC.get(key)
+            log.info(s" [${name}] = ${id}")
+          }
+        }
+
+        val f1 = fn("a", "1")
+        val f2 = fn("b", "2")
+
+        val result = for {
+          r1 <- f1
+          r2 <- f2
+        } yield(r1, r2)
+
+        println( Await.result(result, 10.seconds))
 
       }
     }
@@ -47,14 +76,11 @@ class ExtensionTest extends TestKit(ActorSystem("MySpec")) with ImplicitSender w
 
 
 class MyCounterActor extends Actor with ActorLogging with Contextual {
-  implicit val ec = ExecutionContext.global
+  implicit val ec = MDCPropagatingExecutionContext.Implicits.global
 
   def receive = {
     case _ => {
       log.info("Message received")
-
-
-      val t = tracer()
 
 
 
@@ -65,7 +91,7 @@ class MyCounterActor extends Actor with ActorLogging with Contextual {
 
 
 
-      val span1 = t.newChild(all.context())
+      val span1 = tracer.newChild(all.context())
       span1.name("short-process")
       span1.start()
       all.annotate("Starting short")
@@ -74,7 +100,7 @@ class MyCounterActor extends Actor with ActorLogging with Contextual {
       span1.finish()
 
 
-      val span2 = t.newChild(all.context())
+      val span2 = tracer.newChild(all.context())
       span2.name("long-process")
       span2.start()
       all.annotate("starting long")

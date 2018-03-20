@@ -7,14 +7,19 @@ import zipkin2.reporter.okhttp3.OkHttpSender
 
 
 trait Contextual { self : Actor =>
+  val tracer = ContextExtension(context.system).tracer
   def trace(name: String) = ContextExtension(context.system).tracer.newTrace().name(name).start()
-  def tracer() = ContextExtension(context.system).tracer
   def flush() = {
-    ContextExtension(context.system).spanReporter.flush()
+    ContextExtensionImpl.spanReporter.flush()
   }
 }
 
 class ContextExtensionImpl extends Extension {
+  // Tracing exposes objects you might need, most importantly the tracer
+  val tracer = ContextExtensionImpl.tracer
+}
+
+object ContextExtensionImpl {
 
   val sender = OkHttpSender.create("http://127.0.0.1:9411/api/v2/spans")
   val spanReporter = AsyncReporter.builder(sender).queuedMaxSpans(1).build
@@ -24,8 +29,6 @@ class ContextExtensionImpl extends Extension {
 
   // Tracing exposes objects you might need, most importantly the tracer
   val tracer = tracing.tracer
-
-
 }
 
 

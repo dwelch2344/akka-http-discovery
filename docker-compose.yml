@@ -19,3 +19,13 @@ consul:
     ports:
       - "8500:8500"
     command: agent -server -dev -ui -bootstrap -data-dir=/data -config-dir=/config
+
+zipkin:
+  image: openzipkin/zipkin
+  environment:
+    HOSTNAME: xyz.server.com
+    'logging.level.com.facebook.swift.service.ThriftServiceProcessor': INFO
+  expose:
+    - "9411"
+  ports:
+    - "9411:9411"
